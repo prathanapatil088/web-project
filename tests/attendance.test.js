@@ -1,4 +1,8 @@
-const { addStudent, markAttendance, getAttendance } = require('../server');
+const {
+  addStudent,
+  markAttendance,
+  getAttendance
+} = require('../controllers/attendanceController');
 
 test('Add a new student', async () => {
   const result = await addStudent({ name: 'John Doe', id: '123' });

@@ -249,3 +249,9 @@ https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
     console.log(`Teacher Access: https://${ip}:${PORT}/teacher.html`);
     console.log(`======================\n`);
 });
+
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log('=== SERVER STARTED ===');
+  });
+}
