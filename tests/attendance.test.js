@@ -1,3 +1,5 @@
-test('Sample test', () => {
-  expect(1 + 1).toBe(2);
+describe("Basic Test", () => {
+  test("2 + 2 should be 4", () => {
+    expect(2 + 2).toBe(4);
+  });
 });
