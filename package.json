@@ -1,0 +1,16 @@
+{
+  "name": "attendance-system",
+  "version": "1.0.0",
+  "description": "Real-time attendance system with MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.4",
+    "cors": "^2.8.5",
+    "express": "^4.22.1",
+    "mongoose": "^7.8.8",
+    "ngrok": "^5.0.0-beta.2"
+  }
+}

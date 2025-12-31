@@ -1,0 +1,14 @@
+# Node.js
+node_modules/
+
+# Build folders
+dist/
+build/
+
+# Environment & secrets
+.env
+*.pem
+
+# IDE folders
+.idea/
+.vscode/

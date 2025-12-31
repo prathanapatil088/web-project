@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Attendance</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container fade-in">
+        <h2>My Attendance History</h2>
+        <h4 id="student-name-display" style="color: var(--accent-color);"></h4>
+        
+        <div class="history-container">
+            <ul id="history-list">
+                <li style="text-align: center;">Loading...</li>
+            </ul>
+        </div>
+        
+        <a href="/" class="btn" style="margin-top: 2rem;">Back to Home</a>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const studentId = urlParams.get('studentId');
+            
+            if (!studentId) {
+                alert('No student ID provided');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('student-name-display').textContent = `ID: ${studentId}`;
+            const historyList = document.getElementById('history-list');
+
+            try {
+                const response = await fetch(`${API_URL}/student-history/${studentId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    historyList.innerHTML = '';
+                    if (data.history.length === 0) {
+                        historyList.innerHTML = '<li style="text-align:center">No attendance records found.</li>';
+                    } else {
+                        data.history.forEach(record => {
+                            const dateObj = new Date(record.date);
+                            const dateStr = dateObj.toLocaleDateString();
+                            const timeStr = dateObj.toLocaleTimeString();
+                            
+                            const li = document.createElement('li');
+                            li.innerHTML = `
+                                <div style="width:100%">
+                                    <strong style="color: var(--primary-color);">${record.course || 'Class'}</strong>
+                                    <div style="font-size: 0.85rem; color: #888; display:flex; justify-content:space-between; margin-top:0.3rem;">
+                                        <span>${dateStr} ${timeStr}</span>
+                                        <span>${record.status || 'Present'}</span>
+                                    </div>
+                                </div>
+                            `;
+                            historyList.appendChild(li);
+                        });
+                    }
+                } else {
+                    historyList.innerHTML = `<li class="error">${data.error || 'Failed to load history'}</li>`;
+                }
+            } catch (err) {
+                console.error(err);
+                historyList.innerHTML = '<li class="error">Server Error</li>';
+            }
+        });
+    </script>
+</body>
+</html>

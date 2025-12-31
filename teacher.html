@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container fade-in">
+        <h2>🧑‍🏫 Teacher Portal</h2>
+        
+        <!-- LOGIN SECTION -->
+        <div id="login-section">
+            <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">Use your predefined Faculty ID</p>
+            <form id="teacher-login-form">
+                <div class="form-group">
+                    <label for="teacher-id">Faculty ID</label>
+                    <input type="text" id="teacher-id" placeholder="e.g. T001" required>
+                </div>
+                <div class="form-group">
+                    <label for="teacher-password">Password</label>
+                    <input type="password" id="teacher-password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+        </div>
+
+        <!-- MAIN DASHBOARD (Hidden until login) -->
+        <div id="dashboard-section" style="display:none;">
+            
+            <div style="text-align:left; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                <h4 style="margin:0; color:var(--primary-color);">Welcome, <span id="teacher-name"></span></h4>
+                <p style="margin:0; font-size:0.9rem; color:#666;">Dept: <span id="teacher-dept"></span></p>
+            </div>
+
+            <!-- Tabs/Navigation -->
+            <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px;">
+                <button id="btn-create-view" class="btn">➕ Create Session</button>
+                <button id="btn-report-view" class="btn" style="background: #ccc;">📄 View Reports</button>
+            </div>
+
+            <!-- CREATE SESSION VIEW -->
+            <div id="setup-section">
+                <h3>🚀 Start New Class</h3>
+                <form id="session-form">
+                    <div class="form-group">
+                        <label for="branch">Branch (Auto-filled)</label>
+                        <input type="text" id="branch" readonly style="background:#f0f0f0; color:#555;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="semester">Semester</label>
+                        <select id="semester" required>
+                            <option value="">Select Semester</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="course">Select Course</label>
+                        <select id="course" required>
+                            <option value="">Select Course</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="time-slot">Time Slot</label>
+                        <select id="time-slot" required>
+                            <option value="">Select Time</option>
+                            <option value="9:00 to 10:00">9:00 to 10:00</option>
+                            <option value="10:00 to 11:00">10:00 to 11:00</option>
+                            <option value="11:30 to 12:30">11:30 to 12:30</option>
+                            <option value="12:30 to 1:30">12:30 to 1:30</option>
+                            <option value="2:30 to 3:30">2:30 to 3:30</option>
+                            <option value="3:30 to 4:30">3:30 to 4:30</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn">Generate QR Code</button>
+                </form>
+            </div>
+
+            <!-- REPORT VIEW -->
+            <div id="report-section" style="display:none;">
+                <h3>📊 Attendance Reports</h3>
+                
+                <div class="form-group">
+                    <label for="report-course">Filter by Course:</label>
+                    <select id="report-course">
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="report-date">Select Date:</label>
+                    <input type="date" id="report-date">
+                </div>
+
+                <div class="form-group">
+                    <label for="report-time-slot">Filter by Time Slot</label>
+                    <select id="report-time-slot">
+                        <option value="">All Times</option>
+                        <option value="9:00 to 10:00">9:00 to 10:00</option>
+                        <option value="10:00 to 11:00">10:00 to 11:00</option>
+                        <option value="11:30 to 12:30">11:30 to 12:30</option>
+                        <option value="12:30 to 1:30">12:30 to 1:30</option>
+                        <option value="2:30 to 3:30">2:30 to 3:30</option>
+                        <option value="3:30 to 4:30">3:30 to 4:30</option>
+                    </select>
+                </div>
+                
+                <button id="fetch-report" class="btn">Get Attendance</button>
+                
+                <div id="report-container" style="margin-top:20px; max-height:350px; overflow-y:auto; text-align:left;">
+                </div>
+            </div>
+
+            <!-- LIVE SESSION VIEW -->
+            <div id="live-section" style="display:none;">
+                <h3>🔴 Active Session</h3>
+                <p>Session Code: <strong id="session-code"></strong></p>
+                <p>Course: <span id="live-course-name"></span></p>
+                <p>Time: <span id="live-time-slot"></span></p>
+                
+                <div id="qr-display">
+                </div>
+                
+                <p>Time Remaining: <span id="timer">60</span>s</p>
+                
+                <div>
+                    <h4>Live Attendance (<span id="present-count">0</span>)</h4>
+                    <ul id="attendee-list"></ul>
+                </div>
+                
+                <button id="end-session" class="btn btn-danger">End Session</button>
+            </div>
+        </div>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;600&display=swap');
+
+:root {
+    /* Cute & Light Pastel Palette */
+    --primary-color: #FFB7B2;  /* Soft Coral/Pink */
+    --secondary-color: #A6E3E9; /* Pastel Teal/Blue */
+    --accent-color: #FF9AA2;    /* Salmon Pink */
+    --text-color: #5D5D5D;      /* Soft Grey Text */
+    --bg-white: rgba(255, 255, 255, 0.90);
+    --input-bg: #FFF9F9;
+    --button-gradient-start: #FFDAC1; /* Peach */
+/* Manual entry styles for student page */
+#manual-entry { display: none; margin-top: 12px; }
+#manual-entry label { display:block; font-size:0.95rem; color:#333; margin-bottom:6px; }
+.manual-row {
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+.manual-row input {
+    width:100%;
+    padding:14px 16px;
+    border-radius:12px;
+    border:2px solid #ffd8d2; /* soft pink border */
+    background: #fffaf6;
+    font-size:1rem;
+    color:#6b4f4f;
+}
+.manual-row input::placeholder { color: #e4bcbc; font-size:1rem; }
+.manual-row .btn {
+    display: block;
+    width: 100%;
+    padding: 0.9rem 2.2rem; /* match .btn spacing */
+    border-radius: 50px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    box-shadow: 0 5px 15px rgba(255, 183, 178, 0.4);
+    transition: all 0.3s ease;
+}
+.manual-row .btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(255, 183, 178, 0.6);
+}
+    --button-gradient-end: #FFB7B2;   /* Soft Coral */
+    --background-gradient-start: #E2F0CB; /* Pastel Green/Yellow */
+    --background-gradient-end: #C7CEEA;   /* Pastel Purple */
+}
+
+body {
+    font-family: 'Quicksand', sans-serif; /* Rounder, friendlier font */
+    background: linear-gradient(135deg, var(--background-gradient-start) 0%, var(--background-gradient-end) 100%);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: var(--text-color);
+}
+
+.container {
+    background-color: var(--bg-white);
+    padding: 3rem;
+    border-radius: 30px; /* Rounder corners for cuteness */
+    box-shadow: 0 15px 35px rgba(166, 227, 233, 0.4); /* Colored shadow */
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+    transition: transform 0.3s ease;
+    backdrop-filter: blur(8px);
+    border: 3px solid #fff;
+}
+
+h1, h2, h3 {
+    color: #6B7C93;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 2.2rem;
+}
+
+.role-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin-top: 2rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.9rem 2.2rem;
+    background: linear-gradient(to right, var(--button-gradient-start), var(--button-gradient-end));
+    color: #5D5D5D;
+    text-decoration: none;
+    border-radius: 50px;
+    border: 2px solid #fff;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(255, 183, 178, 0.4);
+}
+
+.btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(255, 183, 178, 0.6);
+}
+
+.btn-danger {
+    background: linear-gradient(to right, #FF9AA2, #FFB7B2);
+    color: white;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #8898AA;
+    font-size: 0.95rem;
+    margin-left: 0.5rem;
+}
+
+input, select {
+    width: 100%;
+    padding: 0.9rem 1.2rem;
+    border: 2px solid #F0F0F0;
+    border-radius: 20px;
+    background-color: var(--input-bg);
+    font-family: inherit;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: all 0.3s;
+    color: var(--text-color);
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(166, 227, 233, 0.3);
+}
+
+.history-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.history-container li {
+    background: rgba(255,255,255,0.7);
+    padding: 1rem;
+    border-bottom: 1px solid #F0F0F0;
+    text-align: left;
+    border-radius: 15px;
+    margin-bottom: 10px;
+}
+
+.error {
+    color: white;
+    background-color: #FF9AA2;
+    border: 1px solid #E87A81;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
