@@ -9,42 +9,44 @@
     --bg-white: rgba(255, 255, 255, 0.90);
     --input-bg: #FFF9F9;
     --button-gradient-start: #FFDAC1; /* Peach */
-/* Manual entry styles for student page */
-#manual-entry { display: none; margin-top: 12px; }
-#manual-entry label { display:block; font-size:0.95rem; color:#333; margin-bottom:6px; }
-.manual-row {
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-}
-.manual-row input {
-    width:100%;
-    padding:14px 16px;
-    border-radius:12px;
-    border:2px solid #ffd8d2; /* soft pink border */
-    background: #fffaf6;
-    font-size:1rem;
-    color:#6b4f4f;
-}
-.manual-row input::placeholder { color: #e4bcbc; font-size:1rem; }
-.manual-row .btn {
-    display: block;
-    width: 100%;
-    padding: 0.9rem 2.2rem; /* match .btn spacing */
-    border-radius: 50px;
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: 600;
-    box-shadow: 0 5px 15px rgba(255, 183, 178, 0.4);
-    transition: all 0.3s ease;
-}
-.manual-row .btn:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 8px 20px rgba(255, 183, 178, 0.6);
-}
     --button-gradient-end: #FFB7B2;   /* Soft Coral */
     --background-gradient-start: #E2F0CB; /* Pastel Green/Yellow */
     --background-gradient-end: #C7CEEA;   /* Pastel Purple */
+}
+
+/* Button Styles */
+.btn {
+    display: inline-block;
+    padding: 0.8rem 1.6rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    background: linear-gradient(to right, var(--button-gradient-start), var(--button-gradient-end));
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Back Button Specific */
+.btn[style*="background:#ccc;"] {
+    background: var(--bg-white);
+    color: var(--text-color);
+    box-shadow: none;
+}
+
+.btn[style*="background:#ccc;"]:hover {
+    transform: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 body {
@@ -86,26 +88,6 @@ h1 {
     flex-direction: column;
     gap: 1.2rem;
     margin-top: 2rem;
-}
-
-.btn {
-    display: inline-block;
-    padding: 0.9rem 2.2rem;
-    background: linear-gradient(to right, var(--button-gradient-start), var(--button-gradient-end));
-    color: #5D5D5D;
-    text-decoration: none;
-    border-radius: 50px;
-    border: 2px solid #fff;
-    cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 5px 15px rgba(255, 183, 178, 0.4);
-}
-
-.btn:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 8px 20px rgba(255, 183, 178, 0.6);
 }
 
 .btn-danger {

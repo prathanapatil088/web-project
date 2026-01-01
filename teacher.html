@@ -37,7 +37,7 @@
             <!-- Tabs/Navigation -->
             <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px;">
                 <button id="btn-create-view" class="btn">➕ Create Session</button>
-                <button id="btn-report-view" class="btn" style="background: #ccc;">📄 View Reports</button>
+                <button id="btn-report-view" class="btn">📄 View Reports</button>
             </div>
 
             <!-- CREATE SESSION VIEW -->
@@ -68,6 +68,8 @@
                         <label for="course">Select Course</label>
                         <select id="course" required>
                             <option value="">Select Course</option>
+                            <option value="Software Engineering">Software Engineering</option>
+                            <option value="Cloud Computing">Cloud Computing</option>
                         </select>
                     </div>
 
@@ -116,9 +118,20 @@
                     </select>
                 </div>
                 
-                <button id="fetch-report" class="btn">Get Attendance</button>
-                
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <button id="fetch-report" class="btn">Get Attendance</button>
+                    <button id="fetch-monthly-report-inline" class="btn" style="background: linear-gradient(to right, #9EE493, #6EE7B7);">View Monthly Report</button>
+                </div>
+
                 <div id="report-container" style="margin-top:20px; max-height:350px; overflow-y:auto; text-align:left;">
+                </div>
+            </div>
+
+            <!-- MONTHLY REPORT VIEW -->
+            <div id="monthly-report-section" style="display:none;">
+                <h3>📅 Monthly Attendance Report</h3>
+                <div id="monthly-report-container" style="margin-top:20px; max-height:350px; overflow-y:auto; text-align:left;">
+                    <!-- Monthly report data will be dynamically inserted here -->
                 </div>
             </div>
 

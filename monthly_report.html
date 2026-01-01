@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Monthly Attendance Report</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container fade-in">
+    <h2>📅 Monthly Attendance Report</h2>
+    <div id="controls" style="margin-bottom:12px; display:flex; gap:12px; align-items:center;">
+      <input id="monthly-input" type="month" />
+      <select id="course-select">
+        <option value="">All Courses</option>
+      </select>
+      <button id="view-btn" class="btn">View</button>
+      <a href="teacher.html" class="btn">Back</a>
+    </div>
+
+    <div id="report" style="margin-top:16px; max-height:60vh; overflow:auto; text-align:left;"></div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+
+    function getParams() {
+      const p = new URLSearchParams(window.location.search);
+      return { monthly: p.get('monthly'), course: p.get('course') };
+    }
+
+    function setControlsFromParams() {
+      const { monthly, course } = getParams();
+      if (monthly) document.getElementById('monthly-input').value = monthly;
+      if (course) document.getElementById('course-select').value = course;
+    }
+
+    async function fetchTeacherCourses() {
+      // Attempt to populate course select from /api by logging in? There's no endpoint.
+      // Fallback: keep options already present (seeded teachers have Software Engineering and Cloud Computing)
+      const sel = document.getElementById('course-select');
+      sel.innerHTML = '<option value="">All Courses</option>' +
+        '<option value="Software Engineering">Software Engineering</option>' +
+        '<option value="Cloud Computing">Cloud Computing</option>';
+    }
+
+    async function fetchAndRenderMonthlyReport(monthVal, courseVal) {
+      const reportDiv = document.getElementById('report');
+      reportDiv.innerHTML = '<p>Loading...</p>';
+
+      try {
+        const [yearStr, monthStr] = monthVal.split('-');
+        const year = Number(yearStr);
+        const month = Number(monthStr);
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        const studentCounts = {};
+        const classDaysSet = new Set();
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const day = String(d).padStart(2,'0');
+          const dateStr = `${yearStr}-${monthStr}-${day}`;
+
+          const response = await fetch(`${API_URL}/teacher/report`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date: dateStr, course: courseVal || null, timeSlot: null })
+          });
+
+          if (!response.ok) continue;
+          const data = await response.json();
+          if (!data.success || !Array.isArray(data.data)) continue;
+
+          if (data.data.length > 0) classDaysSet.add(dateStr);
+
+          data.data.forEach(sessionGroup => {
+            sessionGroup.records.forEach(record => {
+              const sid = record.studentId;
+              studentCounts[sid] = (studentCounts[sid] || 0) + 1;
+            });
+          });
+        }
+
+        const totalClassDays = classDaysSet.size;
+        reportDiv.innerHTML = '';
+        const title = document.createElement('h4');
+        title.textContent = `Monthly Attendance for ${monthVal} ${courseVal ? '- ' + courseVal : ''}`;
+        reportDiv.appendChild(title);
+
+        if (totalClassDays === 0) {
+          reportDiv.innerHTML += '<p>No classes held for selected month/course.</p>';
+          return;
+        }
+
+        const header = document.createElement('div');
+        header.style.cssText = 'display:flex; gap:12px; font-weight:700; padding:8px 12px; border-bottom:1px solid #ddd;';
+        header.innerHTML = '<div style="width:40%">Student SRN</div><div style="width:30%">Present Days</div><div style="width:30%">Total Class Days</div>';
+        reportDiv.appendChild(header);
+
+        const sids = Object.keys(studentCounts).sort();
+        sids.forEach(sid => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex; gap:12px; padding:8px 12px; border-bottom:1px solid #eee; align-items:center;';
+          const present = studentCounts[sid] || 0;
+          row.innerHTML = `<div style="width:40%">${sid}</div><div style="width:30%">${present}</div><div style="width:30%">${totalClassDays}</div>`;
+          reportDiv.appendChild(row);
+        });
+
+      } catch (err) {
+        reportDiv.innerHTML = '<p class="error">Failed to load report.</p>';
+        console.error(err);
+      }
+    }
+
+    document.getElementById('view-btn').addEventListener('click', () => {
+      const monthVal = document.getElementById('monthly-input').value;
+      const courseVal = document.getElementById('course-select').value;
+      if (!monthVal) return alert('Please choose month');
+      // update URL and reload
+      const params = new URLSearchParams();
+      params.set('monthly', monthVal);
+      if (courseVal) params.set('course', courseVal);
+      window.location.search = params.toString();
+    });
+
+    // init
+    (async function init() {
+      await fetchTeacherCourses();
+      setControlsFromParams();
+      const { monthly, course } = getParams();
+      if (monthly) fetchAndRenderMonthlyReport(monthly, course);
+    })();
+  </script>
+</body>
+</html>

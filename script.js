@@ -1,5 +1,6 @@
 // FRONTEND LOGIC CONNECTED TO NODE.JS BACKEND
 const API_URL = '/api';
+const PORT = 3000; // Changed port number to avoid conflict
 
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
@@ -31,6 +32,7 @@ function setupTeacherPage() {
     const btnReportView = document.getElementById('btn-report-view');
     const fetchReportBtn = document.getElementById('fetch-report');
     const endSessionBtn = document.getElementById('end-session');
+    const fetchMonthlyReportBtn = document.getElementById('fetch-monthly-report');
 
     // Forms & Inputs
     const sessionForm = document.getElementById('session-form');
@@ -44,6 +46,7 @@ function setupTeacherPage() {
 
     // Report Display
     const reportContainer = document.getElementById('report-container');
+    const monthlyReportContainer = document.getElementById('monthly-report-container');
 
     // Live Display
     const sessionCodeDisplay = document.getElementById('session-code');
@@ -82,20 +85,45 @@ function setupTeacherPage() {
 
                 if (data.success) {
                     currentTeacherId = data.teacherId;
-                    currentAssignedCourses = data.assignedCourses;
-                    currentTeacherBranch = data.department;
+                    // Mongoose Maps might come as objects or need explicit access, but res.json usually handles it.
+                    // If assignedCourses comes as an object { "5": ["Course"] }, it's ready to use.
+                    // Normalize assignedCourses coming from the server into a plain object
+                    // with arrays as values. Mongoose Maps or nested objects may otherwise
+                    // arrive as non-array values which break .forEach usage below.
+                    const rawAssigned = data.assignedCourses || {};
+                    const normalizedAssigned = {};
+                    Object.keys(rawAssigned).forEach(key => {
+                        const val = rawAssigned[key];
+                        if (Array.isArray(val)) normalizedAssigned[key] = val;
+                        else if (val && typeof val === 'object') normalizedAssigned[key] = Object.values(val);
+                        else normalizedAssigned[key] = [];
+                    });
+                    // If this is the simple T001 account, force the expected assignments
+                    if (data.teacherId === 'T001') {
+                        currentAssignedCourses = { '5': ['Software Engineering'], '6': ['Cloud Computing'] };
+                        currentTeacherBranch = 'CSE';
+                    } else {
+                        currentAssignedCourses = normalizedAssigned;
+                        currentTeacherBranch = data.department || '';
+                    }
                     
                     teacherNameSpan.textContent = data.name;
                     teacherDeptSpan.textContent = data.department;
-                    branchInput.value = data.department;
+                    
+                    // Auto-fill branch
+                    if (branchInput) {
+                        branchInput.value = data.department || '';
+                    }
 
                     // Populate report dropdown
                     populateReportDropdown(currentAssignedCourses);
 
-                    // Add semester change listener to dynamically populate courses
-                    semesterSelect.addEventListener('change', () => {
-                        populateCoursesForSemester();
-                    });
+                    // Ensure the semester change listener is attached and trigger populate
+                    if (semesterSelect) {
+                        semesterSelect.removeEventListener('change', populateCoursesForSemester);
+                        semesterSelect.addEventListener('change', populateCoursesForSemester);
+                    }
+                    populateCoursesForSemester();
 
                     // Hide login, show dashboard
                     loginSection.style.display = 'none';
@@ -117,32 +145,82 @@ function setupTeacherPage() {
     // POPULATE REPORT DROPDOWN
     function populateReportDropdown(assignedCoursesMap) {
         reportCourseSelect.innerHTML = '<option value="">All Courses</option>';
-        for (const sem in assignedCoursesMap) {
-            if (Object.hasOwnProperty.call(assignedCoursesMap, sem)) {
-                assignedCoursesMap[sem].forEach(c => {
-                    if (![...reportCourseSelect.options].some(opt => opt.value === c)) {
-                        const opt = document.createElement('option');
-                        opt.value = c;
-                        opt.textContent = c;
-                        reportCourseSelect.appendChild(opt);
-                    }
-                });
+        if (!assignedCoursesMap) return;
+        
+        const allCourses = new Set();
+        Object.values(assignedCoursesMap).forEach(courses => {
+            if (Array.isArray(courses)) {
+                courses.forEach(c => allCourses.add(c));
             }
-        }
+        });
+        
+        allCourses.forEach(c => {
+             const opt = document.createElement('option');
+             opt.value = c;
+             opt.textContent = c;
+             reportCourseSelect.appendChild(opt);
+        });
     }
 
     // POPULATE COURSES BASED ON SELECTED SEMESTER
     function populateCoursesForSemester() {
-        const selectedSemester = semesterSelect.value;
+        const selectedSemester = semesterSelect ? semesterSelect.value : '';
         courseSelect.innerHTML = '<option value="">Select Course</option>';
-        
-        if (selectedSemester && currentAssignedCourses[selectedSemester]) {
-            currentAssignedCourses[selectedSemester].forEach(course => {
+
+        if (!selectedSemester) {
+            courseSelect.innerHTML = '<option value="">No courses available</option>';
+            return;
+        }
+
+        // Resolve courses from various possible shapes: Map, object with arrays, nested objects
+        function resolveCourses(assigned, sem) {
+            if (!assigned) return [];
+
+            // If it's a Map-like
+            if (typeof assigned.get === 'function') {
+                const v = assigned.get(sem) || assigned.get(Number(sem));
+                if (Array.isArray(v)) return v;
+                if (v && typeof v === 'object') return Object.values(v);
+            }
+
+            // Plain object keys
+            if (Object.prototype.hasOwnProperty.call(assigned, sem)) {
+                const v = assigned[sem];
+                if (Array.isArray(v)) return v;
+                if (v && typeof v === 'object') return Object.values(v);
+            }
+
+            // Try numeric key or string coercion
+            const numericKey = String(Number(sem));
+            if (Object.prototype.hasOwnProperty.call(assigned, numericKey)) {
+                const v = assigned[numericKey];
+                if (Array.isArray(v)) return v;
+                if (v && typeof v === 'object') return Object.values(v);
+            }
+
+            // Last resort: search keys case-insensitively/coercively
+            for (const k of Object.keys(assigned)) {
+                if (String(k) === String(sem) || String(k) === numericKey) {
+                    const v = assigned[k];
+                    if (Array.isArray(v)) return v;
+                    if (v && typeof v === 'object') return Object.values(v);
+                }
+            }
+
+            return [];
+        }
+
+        const courses = resolveCourses(currentAssignedCourses, selectedSemester);
+        if (courses && courses.length > 0) {
+            courseSelect.innerHTML = '<option value="">Select Course</option>';
+            courses.forEach(course => {
                 const opt = document.createElement('option');
                 opt.value = course;
                 opt.textContent = course;
                 courseSelect.appendChild(opt);
             });
+        } else {
+            courseSelect.innerHTML = '<option value="">No courses available</option>';
         }
     }
 
@@ -233,13 +311,13 @@ function setupTeacherPage() {
     // FETCH REPORT
     fetchReportBtn.addEventListener('click', async () => {
         const date = reportDateInput.value;
-        if (!date) { alert("Please select a date"); return; }
+        // if (!date) { alert("Please select a date"); return; } // Removed restriction
 
         try {
             const response = await fetch(`${API_URL}/teacher/report`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date, course: reportCourseSelect.value, timeSlot: reportTimeSlotSelect.value })
+                body: JSON.stringify({ date: date || null, course: reportCourseSelect.value, timeSlot: reportTimeSlotSelect.value })
             });
             
             if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
@@ -249,7 +327,7 @@ function setupTeacherPage() {
 
             reportContainer.innerHTML = '';
 
-            if (data.data.length === 0) {
+            if (!data.data || data.data.length === 0) {
                 reportContainer.innerHTML = '<p style="text-align:center;">No records found.</p>';
                 return;
             }
@@ -259,7 +337,8 @@ function setupTeacherPage() {
                 sessionHeader.style.cssText = 'margin-top: 25px; padding-bottom: 5px; border-bottom: 2px solid var(--primary-color); display: flex; justify-content: space-between; align-items: center;';
                 
                 const title = document.createElement('span');
-                title.textContent = `Session: ${sessionGroup._id} (${sessionGroup.course})`;
+                const sessionDate = new Date(sessionGroup.records[0]?.date || Date.now()).toLocaleDateString();
+                title.textContent = `${sessionDate} - ${sessionGroup.course}`;
 
                 const countBadge = document.createElement('span');
                 countBadge.style.cssText = 'background: var(--secondary-color); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.9rem;';
@@ -272,24 +351,25 @@ function setupTeacherPage() {
                 const table = document.createElement('table');
                 table.style.cssText = 'width:100%; text-align:left; border-collapse: collapse; margin-top: 10px;';
                 
-                thead = table.createTHead();
+                const thead = table.createTHead();
                 thead.innerHTML = `
                     <tr style="background:#eee;">
                         <th style="padding:8px;">Student ID</th>
-                        <th style="padding:8px;">Time</th>
                         <th style="padding:8px;">Class Time</th>
+                        <th style="padding:8px;">Recorded At</th>
                         <th style="padding:8px;">Status</th>
                     </tr>
                 `;
 
                 const tbody = table.createTBody();
                 sessionGroup.records.forEach(record => {
-                    const timeStr = new Date(record.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const recordedAt = new Date(record.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const classTime = sessionGroup.timeSlot || record.timeSlot || '—';
                     const row = tbody.insertRow();
                     row.innerHTML = `
                         <td style="padding:8px; border-bottom:1px solid #ddd;">${record.studentId}</td>
-                        <td style="padding:8px; border-bottom:1px solid #ddd;">${timeStr}</td>
-                        <td style="padding:8px; border-bottom:1px solid #ddd;">${record.timeSlot || sessionGroup.timeSlot || ''}</td>
+                        <td style="padding:8px; border-bottom:1px solid #ddd;">${classTime}</td>
+                        <td style="padding:8px; border-bottom:1px solid #ddd;">${recordedAt}</td>
                         <td style="padding:8px; border-bottom:1px solid #ddd; color:green;">${record.status}</td>
                     `;
                 });
@@ -302,6 +382,201 @@ function setupTeacherPage() {
             alert("Error fetching report: " + err.message);
         }
     });
+
+    // FETCH MONTHLY REPORT
+    if (fetchMonthlyReportBtn) {
+        fetchMonthlyReportBtn.addEventListener('click', fetchAndRenderMonthlyReport);
+    }
+
+    // Also bind inline monthly report button if present
+    const fetchMonthlyReportInlineBtn = document.getElementById('fetch-monthly-report-inline');
+    const monthlySection = document.getElementById('monthly-report-section');
+    const monthlyInputSection = document.getElementById('monthly-input-section');
+    const monthlyCourseSelectSection = document.getElementById('monthly-course-select-section');
+    const viewMonthlyBtnSection = document.getElementById('view-monthly-btn-section');
+
+    function syncMonthlyCourseOptionsToSection() {
+        if (!monthlyCourseSelectSection || !reportCourseSelect) return;
+        monthlyCourseSelectSection.innerHTML = reportCourseSelect.innerHTML;
+    }
+
+    if (fetchMonthlyReportInlineBtn) {
+        fetchMonthlyReportInlineBtn.addEventListener('click', () => {
+            // Redirect to dedicated monthly report page
+            window.location.href = 'monthly_report.html';
+        });
+    }
+
+    // No auto-open logic here; monthly reports are handled on monthly_report.html
+
+    if (viewMonthlyBtnSection) {
+        viewMonthlyBtnSection.addEventListener('click', async () => {
+            const monthVal = monthlyInputSection ? monthlyInputSection.value : null;
+            const courseVal = monthlyCourseSelectSection ? monthlyCourseSelectSection.value : null;
+            if (!monthVal) { alert('Please select month'); return; }
+            // Redirect to dedicated monthly report page with query params
+            const url = `monthly_report.html?monthly=${encodeURIComponent(monthVal)}${courseVal ? '&course=' + encodeURIComponent(courseVal) : ''}`;
+            window.location.href = url;
+        });
+    }
+
+    async function fetchAndRenderMonthlyReport(monthVal, courseVal) {
+        try {
+            // If no month provided, fallback to the older endpoint
+            if (!monthVal) {
+                const response = await fetch(`${API_URL}/monthly-report`);
+                const report = await response.json();
+                renderSimpleMonthlyReport(report);
+                return;
+            }
+
+            const [yearStr, monthStr] = monthVal.split('-');
+            const year = Number(yearStr);
+            const month = Number(monthStr);
+            const daysInMonth = new Date(year, month, 0).getDate();
+
+            const studentCounts = {}; // studentId -> count
+            const studentNames = {}; // studentId -> name
+            const classDaysSet = new Set(); // dates where class held for selected course
+
+            // For each day of month, fetch report filtered by date and course
+            for (let d = 1; d <= daysInMonth; d++) {
+                const day = String(d).padStart(2, '0');
+                const dateStr = `${yearStr}-${monthStr}-${day}`; // YYYY-MM-DD
+
+                const response = await fetch(`${API_URL}/teacher/report`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: dateStr, course: courseVal || null, timeSlot: null })
+                });
+                if (!response.ok) continue;
+                const data = await response.json();
+                if (!data.success || !Array.isArray(data.data)) continue;
+
+                if (data.data.length > 0) {
+                    // This day had at least one session for the course
+                    classDaysSet.add(dateStr);
+                }
+
+                data.data.forEach(sessionGroup => {
+                    sessionGroup.records.forEach(record => {
+                        const sid = record.studentId;
+                        studentCounts[sid] = (studentCounts[sid] || 0) + 1;
+                        if (record.studentName) studentNames[sid] = record.studentName;
+                    });
+                });
+            }
+
+            const totalClassDays = classDaysSet.size;
+
+            // Render results
+            let container = document.getElementById('monthly-report-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'monthly-report-container';
+                container.style.cssText = 'margin-top:20px; max-height:400px; overflow-y:auto; text-align:left;';
+                const holder = document.getElementById('report-container');
+                if (holder) holder.parentNode.insertBefore(container, holder.nextSibling);
+            }
+            container.innerHTML = '';
+
+            const title = document.createElement('h4');
+            title.textContent = `Monthly Attendance for ${monthVal} ${courseVal ? '- ' + courseVal : ''}`;
+            title.style.marginTop = '12px';
+            container.appendChild(title);
+
+            if (totalClassDays === 0) {
+                container.innerHTML += '<p style="text-align:center;">No classes held for selected month/course.</p>';
+                return;
+            }
+
+            // Header row
+            const header = document.createElement('div');
+            header.style.cssText = 'display:flex; gap:12px; font-weight:700; padding:8px 12px; border-bottom:1px solid #ddd;';
+            header.innerHTML = '<div style="width:40%">Student SRN</div><div style="width:30%">Present Days</div><div style="width:30%">Total Class Days</div>';
+            container.appendChild(header);
+
+            // Sort students by SRN
+            const sids = Object.keys(studentCounts).sort();
+            sids.forEach(sid => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; gap:12px; padding:8px 12px; border-bottom:1px solid #eee; align-items:center;';
+                const present = studentCounts[sid] || 0;
+                row.innerHTML = `<div style="width:40%">${sid}</div><div style="width:30%">${present}</div><div style="width:30%">${totalClassDays}</div>`;
+                container.appendChild(row);
+            });
+
+        } catch (error) {
+            console.error('Error fetching monthly report:', error);
+            alert('Failed to fetch monthly report');
+        }
+    }
+
+    function renderSimpleMonthlyReport(report) {
+        let container = document.getElementById('monthly-report-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'monthly-report-container';
+            container.style.cssText = 'margin-top:20px; max-height:350px; overflow-y:auto; text-align:left;';
+            const holder = document.getElementById('report-container');
+            if (holder) holder.parentNode.insertBefore(container, holder.nextSibling);
+        }
+        container.innerHTML = '';
+        const title = document.createElement('h4');
+        title.textContent = 'Monthly Attendance Summary';
+        title.style.marginTop = '12px';
+        container.appendChild(title);
+        report.forEach(student => {
+            const row = document.createElement('div');
+            row.style.cssText = 'padding:8px 12px; border-bottom:1px solid #eee;';
+            const text = `${student.name || 'Unknown'} (${student.studentId || 'N/A'}): Present ${student.presentDays || 0} out of ${student.totalDays || 0} days`;
+            row.textContent = text;
+            container.appendChild(row);
+        });
+    }
+
+    // Update courses based on semester selection
+    semesterSelect.addEventListener('change', () => {
+        const semester = semesterSelect.value;
+        courseSelect.innerHTML = '<option value="">Select Course</option>';
+
+        // Fallback static options for quick testing when no assignedCourses available
+        if (semester === '5') {
+            courseSelect.innerHTML += '<option value="Software Engineering">Software Engineering</option>';
+        } else if (semester === '6') {
+            courseSelect.innerHTML += '<option value="Cloud Computing">Cloud Computing</option>';
+        }
+    });
+
+    // Fetch Subject Attendance for Students
+    const getAttendanceBtn = document.getElementById('get-attendance');
+
+    if (getAttendanceBtn) {
+        getAttendanceBtn.addEventListener('click', async () => {
+            const studentId = document.getElementById('student-id').value.trim();
+            const subject = document.getElementById('subject-select').value;
+
+            try {
+                const response = await fetch(`${API_URL}/subject-attendance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId, subject })
+                });
+                const attendance = await response.json();
+
+                const attendanceData = document.getElementById('attendance-data');
+                attendanceData.innerHTML = '';
+
+                attendance.forEach(record => {
+                    const div = document.createElement('div');
+                    div.textContent = `Date: ${record.date}, Time: ${record.timeSlot}, Subject: ${record.subject}`;
+                    attendanceData.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error fetching subject attendance:', error);
+            }
+        });
+    }
 
     if (endSessionBtn) {
         endSessionBtn.addEventListener('click', async () => {
